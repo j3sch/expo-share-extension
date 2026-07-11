@@ -242,6 +242,20 @@ export default function ShareExtension({ url }: { url: string }) {
 
 ## Configuration Options
 
+### iOS Deployment Target
+
+The share extension target defaults to iOS 15.1. To keep it aligned with an app
+that uses a newer deployment target, set `deploymentTarget` explicitly:
+
+```json
+[
+  "expo-share-extension",
+  {
+    "deploymentTarget": "16.4"
+  }
+]
+```
+
 ### Exlude Expo Modules
 
 Exclude unneeded expo modules to reduce the share extension's bundle size by adding the following to your `app.json`/`app.config.(j|t)s`:

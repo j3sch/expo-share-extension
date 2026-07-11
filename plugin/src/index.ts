@@ -58,6 +58,11 @@ export type BackgroundColor = v.InferOutput<typeof rgbaSchema>;
 
 const heightSchema = v.pipe(v.number(), v.minValue(50), v.maxValue(1000));
 
+const deploymentTargetSchema = v.pipe(
+  v.string(),
+  v.regex(/^\d+\.\d+$/, "Expected an iOS deployment target such as 16.4"),
+);
+
 export type Height = v.InferOutput<typeof heightSchema>;
 
 type ActivationType = "image" | "video" | "text" | "url" | "file";
@@ -72,6 +77,7 @@ const withShareExtension: ConfigPlugin<{
   backgroundColor?: BackgroundColor;
   height?: Height;
   excludedPackages?: string[];
+  deploymentTarget?: string;
   googleServicesFile?: string;
   preprocessingFile?: string;
 }> = (config, props) => {
@@ -81,6 +87,10 @@ const withShareExtension: ConfigPlugin<{
 
   if (props?.height) {
     v.parse(heightSchema, props.height);
+  }
+
+  if (props?.deploymentTarget) {
+    v.parse(deploymentTargetSchema, props.deploymentTarget);
   }
 
   const expoFontPlugin = config.plugins?.find(
@@ -110,6 +120,7 @@ const withShareExtension: ConfigPlugin<{
       withShareExtensionTarget,
       {
         fonts,
+        deploymentTarget: props?.deploymentTarget,
         googleServicesFile: props?.googleServicesFile,
         preprocessingFile: props?.preprocessingFile,
       },

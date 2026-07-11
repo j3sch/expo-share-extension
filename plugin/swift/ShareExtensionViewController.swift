@@ -23,7 +23,7 @@ typealias ShareExtensionReactNativeFactory = RCTReactNativeFactory
 
 class ReactNativeDelegate: ShareExtensionReactNativeDelegateSuperclass {
   override func sourceURL(for bridge: RCTBridge) -> URL? {
-    self.bundleURL()
+    bridge.bundleURL ?? self.bundleURL()
   }
   
   override func bundleURL() -> URL? {

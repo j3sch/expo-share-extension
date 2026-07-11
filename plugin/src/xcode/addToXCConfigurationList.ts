@@ -7,18 +7,20 @@ export function addXCConfigurationList(
     currentProjectVersion,
     bundleIdentifier,
     marketingVersion,
+    deploymentTarget = "15.1",
   }: {
     targetName: string;
     currentProjectVersion: string;
     bundleIdentifier: string;
     marketingVersion?: string;
+    deploymentTarget?: string;
   },
 ) {
   const commonBuildSettings = {
     CLANG_ENABLE_MODULES: "YES",
     CURRENT_PROJECT_VERSION: `"${currentProjectVersion}"`,
     INFOPLIST_FILE: `${targetName}/Info.plist`,
-    IPHONEOS_DEPLOYMENT_TARGET: `"15.1"`,
+    IPHONEOS_DEPLOYMENT_TARGET: `"${deploymentTarget}"`,
     LD_RUNPATH_SEARCH_PATHS: `"$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"`,
     PRODUCT_BUNDLE_IDENTIFIER: `"${bundleIdentifier}"`,
     PRODUCT_NAME: `"${targetName}"`,

@@ -16,9 +16,13 @@ import { addXCConfigurationList } from "./xcode/addToXCConfigurationList";
 
 export const withShareExtensionTarget: ConfigPlugin<{
   fonts: string[];
+  deploymentTarget?: string;
   googleServicesFile?: string;
   preprocessingFile?: string;
-}> = (config, { fonts = [], googleServicesFile, preprocessingFile }) => {
+}> = (
+  config,
+  { fonts = [], deploymentTarget, googleServicesFile, preprocessingFile },
+) => {
   return withXcodeProject(config, async (config) => {
     const xcodeProject = config.modResults;
 
@@ -59,6 +63,7 @@ export const withShareExtensionTarget: ConfigPlugin<{
       currentProjectVersion: config.ios?.buildNumber || "1",
       bundleIdentifier,
       marketingVersion,
+      deploymentTarget,
     });
 
     const productFile = addProductFile(xcodeProject, {
