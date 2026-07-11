@@ -38,14 +38,14 @@ describe("addXCConfigurationList", () => {
     );
   });
 
-  it("keeps iOS 15.1 as the backwards-compatible default", () => {
+  it("defaults to the Expo 56 minimum deployment target", () => {
     const { project, addXCConfigurationListMock } = createProject();
 
     addXCConfigurationList(project, baseOptions);
 
     const configurations = addXCConfigurationListMock.mock.calls[0][0];
     expect(configurations[0].buildSettings.IPHONEOS_DEPLOYMENT_TARGET).toBe(
-      '"15.1"',
+      '"16.4"',
     );
   });
 });

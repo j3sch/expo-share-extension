@@ -244,8 +244,8 @@ export default function ShareExtension({ url }: { url: string }) {
 
 ### iOS Deployment Target
 
-The share extension target defaults to iOS 15.1. To keep it aligned with an app
-that uses a newer deployment target, set `deploymentTarget` explicitly:
+This Expo 56-compatible fork defaults the share extension target and native pod
+to iOS 16.4. To use a newer deployment target, set `deploymentTarget` explicitly:
 
 ```json
 [

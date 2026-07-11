@@ -7,7 +7,7 @@ export function addXCConfigurationList(
     currentProjectVersion,
     bundleIdentifier,
     marketingVersion,
-    deploymentTarget = "15.1",
+    deploymentTarget = "16.4",
   }: {
     targetName: string;
     currentProjectVersion: string;
