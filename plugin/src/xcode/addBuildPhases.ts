@@ -22,20 +22,6 @@ export function addBuildPhases(
   const buildPath = `"$(CONTENTS_FOLDER_PATH)/ShareExtensions"`;
   const targetType = "app_extension";
 
-  // Add shell script build phase "Start Packager"
-  xcodeProject.addBuildPhase(
-    [],
-    "PBXShellScriptBuildPhase",
-    "Start Packager",
-    targetUuid,
-    {
-      shellPath: "/bin/sh",
-      shellScript:
-        'export RCT_METRO_PORT="${RCT_METRO_PORT:=8081}"\necho "export RCT_METRO_PORT=${RCT_METRO_PORT}" > "${SRCROOT}/../node_modules/react-native/scripts/.packager.env"\nif [ -z "${RCT_NO_LAUNCH_PACKAGER+xxx}" ] ; then\n  if nc -w 5 -z localhost ${RCT_METRO_PORT} ; then\n    if ! curl -s "http://localhost:${RCT_METRO_PORT}/status" | grep -q "packager-status:running" ; then\n      echo "Port ${RCT_METRO_PORT} already in use, packager is either not running or not running correctly"\n      exit 2\n    fi\n  else\n    open "$SRCROOT/../node_modules/react-native/scripts/launchPackager.command" || echo "Can\'t start packager automatically"\n  fi\nfi\n',
-    },
-    buildPath,
-  );
-
   // Sources build phase
   xcodeProject.addBuildPhase(
     ["ShareExtensionViewController.swift"],
@@ -84,7 +70,7 @@ export function addBuildPhases(
     buildPath,
   );
 
-  xcodeProject.addBuildPhase(
+  const bundleBuildPhase = xcodeProject.addBuildPhase(
     [],
     "PBXShellScriptBuildPhase",
     "Bundle React Native code and images",
@@ -92,6 +78,10 @@ export function addBuildPhases(
     {
       shellPath: "/bin/sh",
       shellScript: `set -e
+  if [[ "$CONFIGURATION" = *Debug* ]]; then
+    export SKIP_BUNDLING=1
+  fi
+
   NODE_BINARY=\${NODE_BINARY:-node}
   
   # Source environment files
@@ -125,4 +115,5 @@ export function addBuildPhases(
     },
     buildPath,
   );
+  bundleBuildPhase.buildPhase.alwaysOutOfDate = 1;
 }

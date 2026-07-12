@@ -3,7 +3,7 @@
 ![npm](https://img.shields.io/npm/v/expo-share-extension.svg)
 ![License](https://img.shields.io/npm/l/expo-share-extension.svg)
 ![Downloads](https://img.shields.io/npm/dm/expo-share-extension.svg)
-![GitHub stars](https://img.shields.io/github/stars/MaxAst/expo-share-extension.svg)
+![GitHub stars](https://img.shields.io/github/stars/j3sch/expo-share-extension.svg)
 
 > **Note**: The default `Text` and `TextInput` components by React Native do not work in the share extension due to a font scaling issue. You can fix this by setting `allowFontScaling={false}` or by importing the given components from `expo-share-extension`.
 
@@ -11,17 +11,11 @@
 
 Create an [iOS share extension](https://developer.apple.com/library/archive/documentation/General/Conceptual/ExtensibilityPG/Share.html) with a custom view (similar to e.g. Pinterest). Supports Apple Sign-In, [React Native Firebase](https://rnfirebase.io/) (including shared auth session via access groups), custom background, custom height, and custom fonts.
 
-https://github.com/MaxAst/expo-share-extension/assets/13224092/e5a6fb3d-6c85-4571-99c8-4efe0f862266
-
 ## Compatibility
 
-| Expo       | `expo-share-extension` |
-| ---------- | ---------------------- |
-| **SDK 54** | 5.0.0+                 |
-| **SDK 53** | 4.0.0+                 |
-| **SDK 52** | 2.0.0+ and 3.0.0+      |
-| **SDK 51** | 1.5.3+                 |
-| **SDK 50** | 1.0.0+                 |
+| Expo       | React Native | `expo-share-extension` |
+| ---------- | ------------ | ---------------------- |
+| **SDK 57** | **0.86**     | **6.0.0-beta**         |
 
 ## Quick Start
 
@@ -244,7 +238,7 @@ export default function ShareExtension({ url }: { url: string }) {
 
 ### iOS Deployment Target
 
-This Expo 56-compatible fork defaults the share extension target and native pod
+This Expo SDK 57-compatible fork defaults the share extension target and native pod
 to iOS 16.4. To use a newer deployment target, set `deploymentTarget` explicitly:
 
 ```json
@@ -378,31 +372,32 @@ class ShareExtensionPreprocessor {
 
 ## App Group
 
-By default the App Group is set to the bundle identifier with the `group.` prefix, e.g. `group.com.example.app`.
-
-You can override this by setting the `AppGroup` or `AppGroupIdentifier` key in your the `infoPlist` configuration of your Expo config, and it will be grabbed from there instead.
-
-Example:
+By default the App Group is set to the bundle identifier with the `group.` prefix, e.g. `group.com.example.app`. Configure a custom App Group directly on the plugin. If the host app and extension share a Keychain session, configure the same logical access group here as well.
 
 ```json
 {
   "expo": {
-    // ..rest of your app.json config..
-    "ios": {
-      "infoPlist": {
-        "AppGroup": "group.com.example.app", // First priority.
-        "AppGroupIdentifier": "group.com.example.app" // Second priority.
-      }
-    }
+    "plugins": [
+      [
+        "expo-share-extension",
+        {
+          "appGroupIdentifier": "group.com.example.app",
+          "keychainAccessGroup": "com.example.app"
+        }
+      ]
+    ]
   }
+}
 ```
+
+`keychainAccessGroup` is optional. The plugin adds `$(AppIdentifierPrefix)` when it writes the entitlement. Existing `ios.infoPlist.AppGroup` and `AppGroupIdentifier` values remain supported temporarily, but are deprecated in favor of `appGroupIdentifier`.
 
 ## Development
 
 If you want to contribute to this project, you can use the example app to test your changes. Run the following commands to get started:
 
 1. Start the expo module build in watch mode: `npm run build`
-2. Start the config plugin build in watch mode: `npm run build plugin`
+2. Build the config plugin: `npm run build:plugin`
 3. `cd /example` and generate the iOS project: `npm run prebuild`
 4. Run the app from the /example folder: `npm run ios`
 

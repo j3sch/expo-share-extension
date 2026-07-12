@@ -5,11 +5,12 @@
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "scripts": {
-    "build": "expo-module build",
+    "build": "expo-module build && expo-module build plugin",
+    "build:plugin": "expo-module build plugin",
     "clean": "expo-module clean",
     "lint": "expo-module lint",
     "test": "expo-module test",
-    "prepare": "expo-module prepare",
+    "prepare": "expo-module prepare && npm run build",
     "prepublishOnly": "expo-module prepublishOnly",
     "expo-module": "expo-module",
     "open:ios": "open -a \"Xcode\" example/ios",
@@ -25,14 +26,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MaxAst/expo-share-extension.git"
+    "url": "git+https://github.com/j3sch/expo-share-extension.git"
   },
   "bugs": {
-    "url": "https://github.com/MaxAst/expo-share-extension/issues"
+    "url": "https://github.com/j3sch/expo-share-extension/issues"
   },
   "author": "Max Ast (https://github.com/MaxAst)",
   "license": "MIT",
-  "homepage": "https://github.com/MaxAst/expo-share-extension#readme",
+  "homepage": "https://github.com/j3sch/expo-share-extension#readme",
   "dependencies": {
     "semver": "^7.7.2",
     "valibot": "^1.1.0"
@@ -40,19 +41,19 @@
   "devDependencies": {
     "@babel/core": "^7.28.4",
     "@babel/runtime": "^7.28.4",
-    "@types/react": "19.1.4",
+    "@types/react": "19.2.10",
     "@types/semver": "^7.7.0",
-    "expo": "^56.0.3",
+    "expo": "^57.0.3",
     "expo-module-scripts": "^5.0.7",
-    "expo-modules-core": "^3.0.20",
-    "react": "^19.2.3",
-    "react-native": "^0.85.3",
+    "expo-modules-core": "^57.0.3",
+    "react": "19.2.7",
+    "react-native": "0.86.0",
     "release-it": "^19.0.2"
   },
   "peerDependencies": {
-    "expo": "*",
-    "react": "*",
-    "react-native": "*"
+    "expo": ">=57.0.0 <58.0.0",
+    "react": ">=19.2.0 <20.0.0",
+    "react-native": ">=0.86.0 <0.87.0"
   },
   "release-it": {
     "github": {

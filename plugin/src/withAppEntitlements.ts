@@ -1,16 +1,27 @@
 import { ConfigPlugin, withEntitlementsPlist } from "@expo/config-plugins";
 
-import { getAppGroup } from "./index";
+import {
+  APP_GROUP_ENTITLEMENT_KEY,
+  KEYCHAIN_ACCESS_GROUPS_ENTITLEMENT_KEY,
+  mergeEntitlementValue,
+  type ShareExtensionIdentity,
+} from "./identity";
 
-export const withAppEntitlements: ConfigPlugin = (config) => {
+export const withAppEntitlements: ConfigPlugin<{
+  identity: ShareExtensionIdentity;
+}> = (config, { identity }) => {
   return withEntitlementsPlist(config, (config) => {
-    if (config.ios?.entitlements?.["com.apple.security.application-groups"]) {
-      return config;
+    config.modResults[APP_GROUP_ENTITLEMENT_KEY] = mergeEntitlementValue(
+      config.modResults[APP_GROUP_ENTITLEMENT_KEY],
+      identity.appGroupIdentifier,
+    );
+    if (identity.keychainAccessGroup) {
+      config.modResults[KEYCHAIN_ACCESS_GROUPS_ENTITLEMENT_KEY] =
+        mergeEntitlementValue(
+          config.modResults[KEYCHAIN_ACCESS_GROUPS_ENTITLEMENT_KEY],
+          identity.keychainAccessGroup,
+        );
     }
-
-    config.modResults["com.apple.security.application-groups"] = [
-      getAppGroup(config),
-    ];
 
     return config;
   });

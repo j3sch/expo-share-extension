@@ -1,11 +1,13 @@
 import { ConfigPlugin, withInfoPlist } from "@expo/config-plugins";
 
-import { getAppGroup } from "./index";
+import { type ShareExtensionIdentity } from "./identity";
 
-export const withAppInfoPlist: ConfigPlugin = (config) => {
+export const withAppInfoPlist: ConfigPlugin<{
+  identity: ShareExtensionIdentity;
+}> = (config, { identity }) => {
   return withInfoPlist(config, (config) => {
-    config.modResults["AppGroup"] = getAppGroup(config);
-    config.modResults["AppGroupIdentifier"] = getAppGroup(config);
+    config.modResults["AppGroup"] = identity.appGroupIdentifier;
+    config.modResults["AppGroupIdentifier"] = identity.appGroupIdentifier;
 
     return config;
   });

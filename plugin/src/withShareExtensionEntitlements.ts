@@ -3,9 +3,16 @@ import { ConfigPlugin, withEntitlementsPlist } from "expo/config-plugins";
 import fs from "fs";
 import path from "path";
 
-import { getAppGroup, getShareExtensionName } from "./index";
+import {
+  APP_GROUP_ENTITLEMENT_KEY,
+  KEYCHAIN_ACCESS_GROUPS_ENTITLEMENT_KEY,
+  type ShareExtensionIdentity,
+} from "./identity";
+import { getShareExtensionName } from "./index";
 
-export const withShareExtensionEntitlements: ConfigPlugin = (config) => {
+export const withShareExtensionEntitlements: ConfigPlugin<{
+  identity: ShareExtensionIdentity;
+}> = (config, { identity }) => {
   return withEntitlementsPlist(config, (config) => {
     const targetName = getShareExtensionName(config);
 
@@ -15,12 +22,15 @@ export const withShareExtensionEntitlements: ConfigPlugin = (config) => {
     );
     const filePath = path.join(targetPath, `${targetName}.entitlements`);
 
-    const existingAppGroup =
-      config.ios?.entitlements?.["com.apple.security.application-groups"];
-
     let shareExtensionEntitlements: Record<string, string | string[]> = {
-      "com.apple.security.application-groups": existingAppGroup ?? [getAppGroup(config)],
+      [APP_GROUP_ENTITLEMENT_KEY]: [identity.appGroupIdentifier],
     };
+
+    if (identity.keychainAccessGroup) {
+      shareExtensionEntitlements[KEYCHAIN_ACCESS_GROUPS_ENTITLEMENT_KEY] = [
+        identity.keychainAccessGroup,
+      ];
+    }
 
     if (config.ios?.usesAppleSignIn) {
       shareExtensionEntitlements = {

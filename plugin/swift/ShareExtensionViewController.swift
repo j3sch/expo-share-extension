@@ -44,7 +44,6 @@ class ReactNativeDelegate: ShareExtensionReactNativeDelegateSuperclass {
       fatalError("Could not load bundle URL")
     }
     return bundleURL
-    Bundle.main.url(forResource: "main", withExtension: "jsbundle")
 #endif
   }
 }
@@ -53,6 +52,8 @@ class ShareExtensionViewController: UIViewController {
   private let loadingIndicator = UIActivityIndicatorView(style: .large)
   var reactNativeFactory: ShareExtensionReactNativeFactory?
   var reactNativeFactoryDelegate: ShareExtensionReactNativeDelegateSuperclass?
+  private var reactNativeRootView: UIView?
+  private var notificationObserverTokens: [NSObjectProtocol] = []
   private var isCleanedUp = false
 
   deinit {
@@ -100,10 +101,7 @@ class ShareExtensionViewController: UIViewController {
   
   private func loadReactNativeContent() {
     getShareData { [weak self] sharedData in
-      guard let self = self else {
-        print("❌ Self was deallocated")
-        return
-      }
+      guard let self = self, !self.isCleanedUp else { return }
       
       reactNativeFactoryDelegate = ReactNativeDelegate()
       reactNativeFactoryDelegate!.dependencyProvider = RCTAppDependencyProvider()
@@ -139,6 +137,7 @@ class ShareExtensionViewController: UIViewController {
       
       configureRootView(reactNativeRootView, withBackgroundColorDict: backgroundFromInfoPlist, withHeight: heightFromInfoPlist)
       view.addSubview(reactNativeRootView)
+      self.reactNativeRootView = reactNativeRootView
 
       // Hide loading indicator once React content is ready
       self.loadingIndicator.stopAnimating()
@@ -236,13 +235,13 @@ class ShareExtensionViewController: UIViewController {
   }
   
   private func setupNotificationCenterObserver() {
-    NotificationCenter.default.addObserver(forName: NSNotification.Name("close"), object: nil, queue: nil) { [weak self] _ in
+    notificationObserverTokens.append(NotificationCenter.default.addObserver(forName: NSNotification.Name("close"), object: nil, queue: nil) { [weak self] _ in
       DispatchQueue.main.async {
         self?.close()
       }
-    }
+    })
     
-    NotificationCenter.default.addObserver(forName: NSNotification.Name("openHostApp"), object: nil, queue: nil) { [weak self] notification in
+    notificationObserverTokens.append(NotificationCenter.default.addObserver(forName: NSNotification.Name("openHostApp"), object: nil, queue: nil) { [weak self] notification in
       DispatchQueue.main.async {
         if let userInfo = notification.userInfo {
           if let path = userInfo["path"] as? String {
@@ -250,21 +249,20 @@ class ShareExtensionViewController: UIViewController {
           }
         }
       }
-    }
+    })
   }
   
   private func cleanupAfterClose() {
     if isCleanedUp { return }
     isCleanedUp = true
     
-    NotificationCenter.default.removeObserver(self)
-    
-    // Remove React Native view and deallocate resources
-    view.subviews.forEach { subview in
-        if subview is RCTRootView {
-            subview.removeFromSuperview()
-        }
-    }
+    notificationObserverTokens.forEach(NotificationCenter.default.removeObserver)
+    notificationObserverTokens.removeAll()
+
+    reactNativeRootView?.removeFromSuperview()
+    reactNativeRootView = nil
+    loadingIndicator.stopAnimating()
+    loadingIndicator.removeFromSuperview()
     
     reactNativeFactory = nil
     reactNativeFactoryDelegate = nil

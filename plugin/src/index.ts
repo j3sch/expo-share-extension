@@ -9,6 +9,15 @@ import { withPodfile } from "./withPodfile";
 import { withShareExtensionEntitlements } from "./withShareExtensionEntitlements";
 import { withShareExtensionInfoPlist } from "./withShareExtensionInfoPlist";
 import { withShareExtensionTarget } from "./withShareExtensionTarget";
+import { resolveShareExtensionIdentity } from "./identity";
+import { type ShareExtensionPluginOptions } from "./types";
+
+export type {
+  ActivationRule,
+  BackgroundColor,
+  Height,
+  ShareExtensionPluginOptions,
+} from "./types";
 
 /**
  * Get the app group for the app by:
@@ -18,14 +27,8 @@ import { withShareExtensionTarget } from "./withShareExtensionTarget";
  * This allows to user to control the app group in case it doesn't match their
  * bundle identifier.
  */
-export const getAppGroup = (config: ExpoConfig) => {
-  if (config.ios?.infoPlist?.AppGroup) {
-    return config.ios?.infoPlist?.AppGroup;
-  } else if (config.ios?.infoPlist?.AppGroupIdentifier) {
-    return config.ios?.infoPlist?.AppGroupIdentifier;
-  }
-  return `group.${getAppBundleIdentifier(config)}`;
-};
+export const getAppGroup = (config: ExpoConfig) =>
+  resolveShareExtensionIdentity(config, {}).appGroupIdentifier;
 
 export const getAppBundleIdentifier = (config: ExpoConfig) => {
   if (!config.ios?.bundleIdentifier) {
@@ -54,8 +57,6 @@ const rgbaSchema = v.object({
   alpha: v.pipe(v.number(), v.minValue(0), v.maxValue(255)),
 });
 
-export type BackgroundColor = v.InferOutput<typeof rgbaSchema>;
-
 const heightSchema = v.pipe(v.number(), v.minValue(50), v.maxValue(1000));
 
 const deploymentTargetSchema = v.pipe(
@@ -63,35 +64,23 @@ const deploymentTargetSchema = v.pipe(
   v.regex(/^\d+\.\d+$/, "Expected an iOS deployment target such as 16.4"),
 );
 
-export type Height = v.InferOutput<typeof heightSchema>;
-
-type ActivationType = "image" | "video" | "text" | "url" | "file";
-
-export type ActivationRule = {
-  type: ActivationType;
-  max?: number;
-};
-
-const withShareExtension: ConfigPlugin<{
-  activationRules?: ActivationRule[];
-  backgroundColor?: BackgroundColor;
-  height?: Height;
-  excludedPackages?: string[];
-  deploymentTarget?: string;
-  googleServicesFile?: string;
-  preprocessingFile?: string;
-}> = (config, props) => {
-  if (props?.backgroundColor) {
+const withShareExtension: ConfigPlugin<ShareExtensionPluginOptions> = (
+  config,
+  props = {},
+) => {
+  if (props.backgroundColor) {
     v.parse(rgbaSchema, props.backgroundColor);
   }
 
-  if (props?.height) {
+  if (props.height) {
     v.parse(heightSchema, props.height);
   }
 
-  if (props?.deploymentTarget) {
+  if (props.deploymentTarget) {
     v.parse(deploymentTargetSchema, props.deploymentTarget);
   }
+
+  const identity = resolveShareExtensionIdentity(config, props);
 
   const expoFontPlugin = config.plugins?.find(
     (p) => Array.isArray(p) && p.length && p.at(0) === "expo-font",
@@ -100,29 +89,30 @@ const withShareExtension: ConfigPlugin<{
   const fonts = expoFontPlugin?.at(1).fonts ?? [];
 
   return withPlugins(config, [
-    withExpoConfig,
-    withAppEntitlements,
-    withAppInfoPlist,
-    [withPodfile, { excludedPackages: props?.excludedPackages ?? [] }],
+    [withExpoConfig, { identity }],
+    [withAppEntitlements, { identity }],
+    [withAppInfoPlist, { identity }],
+    [withPodfile, { excludedPackages: props.excludedPackages ?? [] }],
     [
       withShareExtensionInfoPlist,
       {
         fonts,
-        activationRules: props?.activationRules,
-        backgroundColor: props?.backgroundColor,
-        height: props?.height,
-        preprocessingFile: props?.preprocessingFile,
-        googleServicesFile: props?.googleServicesFile,
+        activationRules: props.activationRules,
+        appGroupIdentifier: identity.appGroupIdentifier,
+        backgroundColor: props.backgroundColor,
+        height: props.height,
+        preprocessingFile: props.preprocessingFile,
+        googleServicesFile: props.googleServicesFile,
       },
     ],
-    withShareExtensionEntitlements,
+    [withShareExtensionEntitlements, { identity }],
     [
       withShareExtensionTarget,
       {
         fonts,
-        deploymentTarget: props?.deploymentTarget,
-        googleServicesFile: props?.googleServicesFile,
-        preprocessingFile: props?.preprocessingFile,
+        deploymentTarget: props.deploymentTarget,
+        googleServicesFile: props.googleServicesFile,
+        preprocessingFile: props.preprocessingFile,
       },
     ],
   ]);

@@ -11,13 +11,13 @@ import {
   type ActivationRule,
   type BackgroundColor,
   type Height,
-  getAppGroup,
   getShareExtensionName,
 } from "./index";
 
 export const withShareExtensionInfoPlist: ConfigPlugin<{
   fonts: string[];
   activationRules?: ActivationRule[];
+  appGroupIdentifier: string;
   backgroundColor?: BackgroundColor;
   height?: Height;
   preprocessingFile?: string;
@@ -27,6 +27,7 @@ export const withShareExtensionInfoPlist: ConfigPlugin<{
   {
     fonts = [],
     activationRules = [{ type: "text" }, { type: "url" }],
+    appGroupIdentifier,
     backgroundColor,
     height,
     preprocessingFile,
@@ -42,8 +43,6 @@ export const withShareExtensionInfoPlist: ConfigPlugin<{
     );
 
     const filePath = path.join(targetPath, "Info.plist");
-
-    const appGroup = getAppGroup(config);
 
     let infoPlist: InfoPlist = {
       CFBundleDevelopmentRegion: "$(DEVELOPMENT_LANGUAGE)",
@@ -77,8 +76,8 @@ export const withShareExtensionInfoPlist: ConfigPlugin<{
         UISceneConfigurations: {},
       },
       UIAppFonts: fonts.map((font) => path.basename(font)) ?? [],
-      AppGroup: appGroup,
-      AppGroupIdentifier: appGroup,
+      AppGroup: appGroupIdentifier,
+      AppGroupIdentifier: appGroupIdentifier,
       NSExtension: {
         NSExtensionAttributes: {
           NSExtensionActivationRule: (() => {
