@@ -288,6 +288,7 @@ class ShareExtensionViewController: UIViewController {
     var sharedItems: [String: Any] = [:]
     
     let group = DispatchGroup()
+    let importQueue = DispatchQueue(label: "expo-share-extension.share-import")
     
     let fileManager = FileManager.default
     
@@ -296,7 +297,8 @@ class ShareExtensionViewController: UIViewController {
         if provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
           group.enter()
           provider.loadItem(forTypeIdentifier: UTType.url.identifier, options: nil) { (urlItem, error) in
-            DispatchQueue.main.async {
+            importQueue.async {
+              defer { group.leave() }
               if let sharedURL = urlItem as? URL {
                 if sharedURL.isFileURL {
                   // Screenshot overlay sends public.url (file URLs) instead of public.image
@@ -311,13 +313,11 @@ class ShareExtensionViewController: UIViewController {
                   
                   guard let appGroup = Bundle.main.object(forInfoDictionaryKey: "AppGroup") as? String else {
                     print("Could not find AppGroup in info.plist")
-                    group.leave()
                     return
                   }
                   
                   guard let containerUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) else {
                     print("Could not set up file manager container URL for app group")
-                    group.leave()
                     return
                   }
                   
@@ -353,7 +353,6 @@ class ShareExtensionViewController: UIViewController {
                   sharedItems["url"] = sharedURL.absoluteString
                 }
               }
-              group.leave()
             }
           }
         }
@@ -363,12 +362,12 @@ class ShareExtensionViewController: UIViewController {
         if provider.hasItemConformingToTypeIdentifier(UTType.propertyList.identifier) {
           group.enter()
           provider.loadItem(forTypeIdentifier: UTType.propertyList.identifier, options: nil) { (item, error) in
-            DispatchQueue.main.async {
+            importQueue.async {
+              defer { group.leave() }
               if let itemDict = item as? NSDictionary,
                  let results = itemDict[NSExtensionJavaScriptPreprocessingResultsKey] as? NSDictionary {
                 sharedItems["preprocessingResults"] = results
               }
-              group.leave()
             }
           }
         }
@@ -377,17 +376,18 @@ class ShareExtensionViewController: UIViewController {
         if !provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) && provider.hasItemConformingToTypeIdentifier(UTType.text.identifier) {
           group.enter()
           provider.loadItem(forTypeIdentifier: UTType.text.identifier, options: nil) { (textItem, error) in
-            DispatchQueue.main.async {
+            importQueue.async {
+              defer { group.leave() }
               if let text = textItem as? String {
                 sharedItems["text"] = text
               }
-              group.leave()
             }
           }
         } else if provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
           group.enter()
           provider.loadItem(forTypeIdentifier: UTType.image.identifier, options: nil) { (imageItem, error) in
-            DispatchQueue.main.async {
+            importQueue.async {
+              defer { group.leave() }
               
               // Ensure the array exists
               if sharedItems["images"] == nil {
@@ -486,14 +486,14 @@ class ShareExtensionViewController: UIViewController {
               } else {
                 print("imageItem is not a recognized type")
               }
-              group.leave()
             }
           }
         } else if provider.hasItemConformingToTypeIdentifier(UTType.movie.identifier) {
           group.enter()
           provider.loadItem(forTypeIdentifier: UTType.movie.identifier, options: nil) { (videoItem, error) in
-            DispatchQueue.main.async {
+            importQueue.async {
               print("videoItem type: \(type(of: videoItem))")
+              var waitsForExport = false
               
               // Ensure the array exists
               if sharedItems["videos"] == nil {
@@ -502,11 +502,13 @@ class ShareExtensionViewController: UIViewController {
               
               guard let appGroup = Bundle.main.object(forInfoDictionaryKey: "AppGroup") as? String else {
                 print("Could not find AppGroup in info.plist")
+                group.leave()
                 return
               }
               
               guard let containerUrl = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup) else {
                 print("Could not set up file manager container URL for app group")
+                group.leave()
                 return
               }
               
@@ -568,7 +570,14 @@ class ShareExtensionViewController: UIViewController {
               }
               // Check if videoItem is AVAsset
               else if let asset = videoItem as? AVAsset {
-                let exportSession = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetPassthrough)
+                guard let exportSession = AVAssetExportSession(
+                  asset: asset,
+                  presetName: AVAssetExportPresetPassthrough
+                ) else {
+                  print("Failed to create video export session")
+                  group.leave()
+                  return
+                }
                 
                 let fileExtension = "mov" // Using mov as default type extension
                 let fileName = UUID().uuidString + "." + fileExtension
@@ -585,25 +594,34 @@ class ShareExtensionViewController: UIViewController {
                 
                 let persistentURL = sharedDataUrl.appendingPathComponent(fileName)
                 
-                exportSession?.outputURL = persistentURL
-                exportSession?.outputFileType = .mov
-                exportSession?.exportAsynchronously {
-                  switch exportSession?.status {
-                  case .completed:
-                    if var videoArray = sharedItems["videos"] as? [String] {
-                      videoArray.append(persistentURL.absoluteString)
-                      sharedItems["videos"] = videoArray
+                waitsForExport = true
+                exportSession.outputURL = persistentURL
+                exportSession.outputFileType = .mov
+                exportSession.exportAsynchronously {
+                  importQueue.async {
+                    defer { group.leave() }
+
+                    switch exportSession.status {
+                    case .completed:
+                      if var videoArray = sharedItems["videos"] as? [String] {
+                        videoArray.append(persistentURL.absoluteString)
+                        sharedItems["videos"] = videoArray
+                      }
+                    case .failed:
+                      print("Failed to export video: \(String(describing: exportSession.error))")
+                    case .cancelled:
+                      print("Video export was cancelled")
+                    default:
+                      print("Video export did not complete: \(exportSession.status.rawValue)")
                     }
-                  case .failed:
-                    print("Failed to export video: \(String(describing: exportSession?.error))")
-                  default:
-                    break
                   }
                 }
               } else {
                 print("videoItem is not a recognized type")
               }
-              group.leave()
+              if !waitsForExport {
+                group.leave()
+              }
             }
           }
         }
