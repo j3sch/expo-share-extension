@@ -1,6 +1,6 @@
 import { File } from "expo-file-system";
 import {
-  clearAppGroupContainer,
+  deleteSharedFiles,
   close,
   type InitialProps,
   Text,
@@ -42,7 +42,7 @@ export default function ShareExtension({ url, text, files }: InitialProps) {
   });
 
   const onClose = async () => {
-    await clearAppGroupContainer();
+    await deleteSharedFiles(files ?? []);
     close();
   };
 

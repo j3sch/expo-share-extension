@@ -29,6 +29,16 @@ export function addPbxGroup(
     targetPath,
     "ShareExtensionViewController.swift"
   );
+  copyFileSync(
+    path.join(__dirname, "../../../ios/SharedFileStore.swift"),
+    targetPath,
+    "SharedFileStore.swift"
+  );
+  copyFileSync(
+    path.join(__dirname, "../../../ios/ShareDataImporter.swift"),
+    targetPath,
+    "ShareDataImporter.swift"
+  );
 
   for (const font of fonts) {
     copyFileSync(font, targetPath);
@@ -36,6 +46,8 @@ export function addPbxGroup(
 
   const files = [
     "ShareExtensionViewController.swift",
+    "SharedFileStore.swift",
+    "ShareDataImporter.swift",
     "Info.plist",
     `${targetName}.entitlements`,
     ...fonts.map((font: string) => path.basename(font)),

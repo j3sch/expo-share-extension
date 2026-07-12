@@ -8,12 +8,20 @@ export function openHostApp(path: string): void {
   return ExpoShareExtensionModule.openHostApp(path);
 }
 
-export async function clearAppGroupContainer(args?: {
-  cleanUpBefore?: Date;
+export async function clearAppGroupContainer(args: {
+  cleanUpBefore: Date;
 }): Promise<void> {
   return await ExpoShareExtensionModule.clearAppGroupContainer(
-    args?.cleanUpBefore?.toISOString(),
+    args.cleanUpBefore.toISOString(),
   );
+}
+
+/** Removes only file URLs created by this package in the App Group shared-data directory. */
+export async function deleteSharedFiles(fileURLs: string[]): Promise<void> {
+  if (fileURLs.length === 0) {
+    return;
+  }
+  return await ExpoShareExtensionModule.deleteSharedFiles(fileURLs);
 }
 
 export interface IExtensionPreprocessingJS {

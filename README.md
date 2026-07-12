@@ -212,27 +212,29 @@ export default function ShareExtension({ url }: { url: string }) {
 }
 ```
 
-When you share images and videos, `expo-share-extension` stores them in a `sharedData` directory in your app group's container.
-These files are not automatically cleaned up, so you should delete them when you're done with them. You can use the `clearAppGroupContainer` method from `expo-share-extension` to delete them:
+When you share files, images, or videos, `expo-share-extension` stores them in a `sharedData` directory in your App Group container and returns canonical `file://` URLs.
+Keep those files until the host has durably queued or uploaded them. If the user cancels, remove only the URLs from that share; do not clear the whole directory because another queued share may still need its files.
 
 ```ts
-import { clearAppGroupContainer } from "expo-share-extension"
+import { deleteSharedFiles } from "expo-share-extension"
 import { Button, Text, View } from "react-native";
 
 // if ShareExtension is your root component, url is available as an initial prop
-export default function ShareExtension({ url }: { url: string }) {
+export default function ShareExtension({ files = [] }: { files?: string[] }) {
   const handleCleanUp = async () => {
-    await clearAppGroupContainer()
+    await deleteSharedFiles(files)
   }
 
   return (
     <View style={{ flex: 1 }}>
-      <Text>I have finished processing all shared images and videos</Text>
-      <Button title="Clear App Group Container" onPress={handleOpenHostApp} />
+      <Text>I cancelled this share</Text>
+      <Button title="Discard shared files" onPress={handleCleanUp} />
     </View>
   );
 }
 ```
+
+For crash recovery, use `clearAppGroupContainer({ cleanUpBefore })` only with a conservative retention window chosen by the host app. It deletes files older than that timestamp; it never performs an unbounded wipe.
 
 ## Configuration Options
 

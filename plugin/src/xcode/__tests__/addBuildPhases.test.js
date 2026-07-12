@@ -31,6 +31,12 @@ describe("addBuildPhases", () => {
       resources: [],
     });
 
+    expect(phases[0].args[0]).toEqual([
+      "ShareExtensionViewController.swift",
+      "SharedFileStore.swift",
+      "ShareDataImporter.swift",
+    ]);
+
     expect(phases.some(({ args }) => args[2] === "Start Packager")).toBe(false);
 
     const bundlePhase = phases.find(
